@@ -16,29 +16,26 @@ echo "[2/5] 최신 코드 가져오기..."
 git pull git@github.com:Kontrack/library.git main
 
 echo ""
-echo "[3/5] Docker 컨테이너 중지..."
-docker-compose down
+echo "[3/5] 웹 파일 업데이트..."
+sudo cp -r public/* /usr/share/nginx/html/library/
+sudo chown -R www-data:www-data /usr/share/nginx/html/library/
 
 echo ""
-echo "[4/5] Docker 이미지 재빌드..."
-docker-compose build
+echo "[4/5] MySQL 컨테이너 재시작..."
+docker-compose restart library-mysql
 
 echo ""
-echo "[5/5] Docker 컨테이너 시작..."
-docker-compose up -d
-
-echo ""
-echo "상태 확인 중..."
+echo "[5/5] 서비스 상태 확인..."
 sleep 3
-docker-compose ps
+docker-compose ps library-mysql
 
 echo ""
 echo "========================================"
 echo "      업데이트 완료!"
 echo "========================================"
 echo ""
-echo "📍 http://localhost:8080"
 echo "📍 https://library.kontrack.kr"
+echo "📍 MySQL: localhost:3307"
 echo ""
 echo "로그 확인: ./logs.sh"
 echo "상태 확인: ./health.sh"

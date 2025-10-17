@@ -6,29 +6,29 @@ echo "  도서관 관리 시스템 재빌드"
 echo "========================================"
 echo ""
 
-echo "[1/3] Docker 컨테이너 중지 및 삭제..."
-docker-compose down
+echo "[1/3] MySQL 컨테이너 중지 및 삭제..."
+docker-compose down library-mysql
 
 echo ""
-echo "[2/3] Docker 이미지 재빌드..."
-docker-compose build --no-cache
+echo "[2/3] MySQL 이미지 재빌드..."
+docker-compose build --no-cache library-mysql
 
 echo ""
-echo "[3/3] Docker 컨테이너 시작..."
-docker-compose up -d
+echo "[3/3] MySQL 컨테이너 시작..."
+docker-compose up -d library-mysql
 
 echo ""
 echo "상태 확인 중..."
 sleep 3
-docker-compose ps
+docker-compose ps library-mysql
 
 echo ""
 echo "========================================"
 echo "      재빌드 완료!"
 echo "========================================"
 echo ""
-echo "📍 http://localhost:8080"
 echo "📍 https://library.kontrack.kr"
+echo "📍 MySQL: localhost:3307"
 echo ""
 echo "로그 확인: ./logs.sh"
 echo ""

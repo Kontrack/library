@@ -7,12 +7,6 @@ echo "========================================"
 echo ""
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📦 Docker 컨테이너 상태"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-docker-compose ps
-
-echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "🗄️  MySQL 데이터베이스 상태"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if docker-compose ps library-mysql | grep -q "Up"; then
@@ -35,21 +29,23 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🌐 Nginx 웹서버 상태"
+echo "🌐 웹서버 상태 (library.kontrack.kr)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if docker-compose ps library-nginx | grep -q "Up"; then
-    echo "✅ Nginx 실행 중 (포트 8080)"
-    
-    # HTTP 접속 테스트
-    if curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 2>/dev/null | grep -q "200"; then
-        echo "✅ HTTP 응답 정상 (200 OK)"
-        echo "📍 http://localhost:8080"
-    else
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080 2>/dev/null)
-        echo "⚠️  HTTP 응답: ${HTTP_CODE:-N/A}"
-    fi
+
+# HTTPS 접속 테스트
+if curl -s -o /dev/null -w "%{http_code}" https://library.kontrack.kr 2>/dev/null | grep -q "200"; then
+    echo "✅ HTTPS 응답 정상 (200 OK)"
+    echo "📍 https://library.kontrack.kr"
 else
-    echo "❌ Nginx 중지됨"
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://library.kontrack.kr 2>/dev/null)
+    echo "⚠️  HTTPS 응답: ${HTTP_CODE:-N/A}"
+fi
+
+# Nginx 상태 확인
+if systemctl is-active --quiet nginx; then
+    echo "✅ Nginx 서비스 실행 중"
+else
+    echo "❌ Nginx 서비스 중지됨"
 fi
 
 echo ""
@@ -62,7 +58,7 @@ echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "📊 리소스 사용량"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}" $(docker-compose ps -q 2>/dev/null) 2>/dev/null || echo "컨테이너가 실행 중이지 않습니다."
+docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}" $(docker-compose ps -q library-mysql 2>/dev/null) 2>/dev/null || echo "MySQL 컨테이너가 실행 중이지 않습니다."
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

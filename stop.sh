@@ -6,8 +6,8 @@ echo "  도서관 관리 시스템 중지"
 echo "========================================"
 echo ""
 
-echo "Docker 컨테이너 중지 중..."
-docker-compose down
+echo "MySQL 컨테이너 중지 중..."
+docker-compose stop library-mysql
 
 echo ""
 echo "========================================"
