@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>도서관 관리 시스템</title>
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <svg width="32" height="32" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="10" y="15" width="40" height="35" rx="2" stroke="#ffffff" stroke-width="2" fill="none"/>
+                    <line x1="20" y1="25" x2="40" y2="25" stroke="#ffffff" stroke-width="2"/>
+                    <line x1="20" y1="32" x2="40" y2="32" stroke="#ffffff" stroke-width="2"/>
+                    <line x1="20" y1="39" x2="35" y2="39" stroke="#ffffff" stroke-width="2"/>
+                </svg>
+                <span>도서관 관리 시스템</span>
+            </div>
+            
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active" data-page="home">홈</a></li>
+                <li><a href="#" class="nav-link" data-page="books">서적 목록</a></li>
+                <li><a href="#" class="nav-link" data-page="popular">인기 도서</a></li>
+                <li><a href="#" class="nav-link" data-page="mybooks">내 대출</a></li>
+                <li class="admin-only" style="display: none;">
+                    <a href="#" class="nav-link" data-page="manage">관리</a>
+                </li>
+            </ul>
+            
+            <div class="nav-user">
+                <span class="user-name" id="userName">사용자</span>
+                <button class="btn-logout" id="logoutBtn">로그아웃</button>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Page -->
+        <div id="page-home" class="page active">
+            <section class="hero">
+                <h1>도서관 관리 시스템에 오신 것을 환영합니다</h1>
+                <p>다양한 서적을 검색하고 대출해보세요</p>
+            </section>
+            
+            <section class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-info">
+                        <h3>전체 도서</h3>
+                        <p class="stat-number">1,234</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-info">
+                        <h3>대출 가능</h3>
+                        <p class="stat-number">856</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📖</div>
+                    <div class="stat-info">
+                        <h3>내 대출 도서</h3>
+                        <p class="stat-number">2</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-info">
+                        <h3>인기 도서</h3>
+                        <p class="stat-number">50</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="recent-books">
+                <h2>최근 추가된 도서</h2>
+                <div class="book-grid">
+                    <div class="book-card">
+                        <div class="book-cover">📘</div>
+                        <h3>클린 코드</h3>
+                        <p class="book-author">로버트 C. 마틴</p>
+                        <p class="book-category">프로그래밍</p>
+                        <button class="btn-small">대출하기</button>
+                    </div>
+                    <div class="book-card">
+                        <div class="book-cover">📗</div>
+                        <h3>데이터베이스 개론</h3>
+                        <p class="book-author">김연희</p>
+                        <p class="book-category">데이터베이스</p>
+                        <button class="btn-small">대출하기</button>
+                    </div>
+                    <div class="book-card">
+                        <div class="book-cover">📙</div>
+                        <h3>JavaScript 완벽 가이드</h3>
+                        <p class="book-author">데이비드 플래너건</p>
+                        <p class="book-category">웹 개발</p>
+                        <button class="btn-small">대출하기</button>
+                    </div>
+                    <div class="book-card">
+                        <div class="book-cover">📕</div>
+                        <h3>알고리즘 문제해결전략</h3>
+                        <p class="book-author">구종만</p>
+                        <p class="book-category">알고리즘</p>
+                        <button class="btn-small">대출하기</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- Books List Page -->
+        <div id="page-books" class="page">
+            <section class="page-header">
+                <h1>서적 목록</h1>
+                <div class="search-bar">
+                    <input type="text" placeholder="책 제목, 저자, 카테고리로 검색" id="searchInput">
+                    <button class="btn-search">🔍</button>
+                </div>
+            </section>
+            
+            <section class="filter-section">
+                <div class="filter-group">
+                    <label>정렬:</label>
+                    <select id="sortBy">
+                        <option value="title">제목</option>
+                        <option value="author">저자</option>
+                        <option value="category">카테고리</option>
+                        <option value="available">대출 가능</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>카테고리:</label>
+                    <select id="filterCategory">
+                        <option value="all">전체</option>
+                        <option value="programming">프로그래밍</option>
+                        <option value="database">데이터베이스</option>
+                        <option value="web">웹 개발</option>
+                        <option value="algorithm">알고리즘</option>
+                    </select>
+                </div>
+            </section>
+            
+            <section class="books-list">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>제목</th>
+                            <th>저자</th>
+                            <th>카테고리</th>
+                            <th>수량</th>
+                            <th>대출 가능</th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booksTableBody">
+                        <tr>
+                            <td>클린 코드</td>
+                            <td>로버트 C. 마틴</td>
+                            <td>프로그래밍</td>
+                            <td>5</td>
+                            <td><span class="badge badge-success">가능</span></td>
+                            <td><button class="btn-small">대출</button></td>
+                        </tr>
+                        <tr>
+                            <td>데이터베이스 개론</td>
+                            <td>김연희</td>
+                            <td>데이터베이스</td>
+                            <td>3</td>
+                            <td><span class="badge badge-success">가능</span></td>
+                            <td><button class="btn-small">대출</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+        
+        <!-- Popular Books Page -->
+        <div id="page-popular" class="page">
+            <section class="page-header">
+                <h1>인기 도서 차트</h1>
+                <p>최근 3개월 대출 기록 기준</p>
+            </section>
+            
+            <section class="chart-tabs">
+                <button class="tab-btn active" data-chart="all">전체</button>
+                <button class="tab-btn" data-chart="programming">프로그래밍</button>
+                <button class="tab-btn" data-chart="database">데이터베이스</button>
+                <button class="tab-btn" data-chart="web">웹 개발</button>
+            </section>
+            
+            <section class="popular-list">
+                <div class="rank-item">
+                    <div class="rank-number">1</div>
+                    <div class="rank-info">
+                        <h3>클린 코드</h3>
+                        <p>로버트 C. 마틴 · 프로그래밍</p>
+                    </div>
+                    <div class="rank-count">대출 156회</div>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-number">2</div>
+                    <div class="rank-info">
+                        <h3>데이터베이스 개론</h3>
+                        <p>김연희 · 데이터베이스</p>
+                    </div>
+                    <div class="rank-count">대출 142회</div>
+                </div>
+                <div class="rank-item">
+                    <div class="rank-number">3</div>
+                    <div class="rank-info">
+                        <h3>JavaScript 완벽 가이드</h3>
+                        <p>데이비드 플래너건 · 웹 개발</p>
+                    </div>
+                    <div class="rank-count">대출 128회</div>
+                </div>
+            </section>
+        </div>
+        
+        <!-- My Books Page -->
+        <div id="page-mybooks" class="page">
+            <section class="page-header">
+                <h1>내 대출 도서</h1>
+                <p>현재 대출 중인 도서와 대출 이력을 확인하세요</p>
+            </section>
+            
+            <section class="current-loans">
+                <h2>현재 대출 중 (2/3)</h2>
+                <div class="loan-list">
+                    <div class="loan-item">
+                        <div class="loan-book">
+                            <div class="book-cover-small">📘</div>
+                            <div>
+                                <h3>클린 코드</h3>
+                                <p>로버트 C. 마틴</p>
+                            </div>
+                        </div>
+                        <div class="loan-info">
+                            <p>대출일: 2025-10-10</p>
+                            <p class="due-date">반납일: 2025-10-17 (5일 남음)</p>
+                        </div>
+                        <button class="btn-small btn-return">반납하기</button>
+                    </div>
+                    <div class="loan-item">
+                        <div class="loan-book">
+                            <div class="book-cover-small">📗</div>
+                            <div>
+                                <h3>데이터베이스 개론</h3>
+                                <p>김연희</p>
+                            </div>
+                        </div>
+                        <div class="loan-info">
+                            <p>대출일: 2025-10-12</p>
+                            <p class="due-date">반납일: 2025-10-19 (7일 남음)</p>
+                        </div>
+                        <button class="btn-small btn-return">반납하기</button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="loan-history">
+                <h2>대출 이력</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>도서명</th>
+                            <th>저자</th>
+                            <th>대출일</th>
+                            <th>반납일</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>알고리즘 문제해결전략</td>
+                            <td>구종만</td>
+                            <td>2025-09-15</td>
+                            <td>2025-09-20</td>
+                            <td><span class="badge badge-secondary">반납완료</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+        
+        <!-- Admin Management Page -->
+        <div id="page-manage" class="page admin-only" style="display: none;">
+            <section class="page-header">
+                <h1>관리자 페이지</h1>
+            </section>
+            
+            <section class="admin-tabs">
+                <button class="tab-btn active" data-admin="books">서적 관리</button>
+                <button class="tab-btn" data-admin="categories">카테고리 관리</button>
+                <button class="tab-btn" data-admin="members">회원 관리</button>
+            </section>
+            
+            <section id="admin-books" class="admin-content">
+                <div class="admin-actions">
+                    <button class="btn-primary">서적 추가</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>제목</th>
+                            <th>저자</th>
+                            <th>카테고리</th>
+                            <th>수량</th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>클린 코드</td>
+                            <td>로버트 C. 마틴</td>
+                            <td>프로그래밍</td>
+                            <td>5</td>
+                            <td>
+                                <button class="btn-small">수정</button>
+                                <button class="btn-small btn-danger">삭제</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <section id="admin-categories" class="admin-content" style="display: none;">
+                <div class="admin-actions">
+                    <button class="btn-primary">카테고리 추가</button>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>카테고리명</th>
+                            <th>도서 수</th>
+                            <th>액션</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>프로그래밍</td>
+                            <td>156</td>
+                            <td>
+                                <button class="btn-small">수정</button>
+                                <button class="btn-small btn-danger">삭제</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+            <section id="admin-members" class="admin-content" style="display: none;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>아이디</th>
+                            <th>이름</th>
+                            <th>이메일</th>
+                            <th>가입일</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>user001</td>
+                            <td>홍길동</td>
+                            <td>hong@example.com</td>
+                            <td>2025-10-01</td>
+                            <td><span class="badge badge-success">정상</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+    
+    <script src="js/main.js"></script>
+</body>
+</html>
+
