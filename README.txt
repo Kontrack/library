@@ -101,10 +101,9 @@ GitHub에서 최신 코드 받아서 자동 배포
 
 ### deploy.sh
 프로덕션 배포
-- 웹 파일 배포
-- Nginx 설정
-- SSL 인증서 설정
-- MySQL 시작
+- 웹 파일 배포 (/usr/share/nginx/html/library/)
+- MySQL 시작 (포트 3307)
+- 수동 작업 안내 (볼륨 마운트, Nginx 설정)
 
 ## 워크플로우
 
@@ -139,6 +138,8 @@ git push
 2. 현재는 프론트엔드만 구현됨
 3. 백엔드 API는 추후 구현 예정
 4. MySQL 포트 3307 사용 (기존 3306 충돌 방지)
+5. 기존 Kontrack Nginx Docker 컨테이너 사용
+6. 다른 프로젝트(kontrack, api, chat, ser)에 영향 없음
 
 ## 문제 해결
 
@@ -165,7 +166,16 @@ sudo nginx -t
 sudo systemctl status nginx
 ```
 
+## 볼륨 마운트 (수동 구성)
+Kontrack docker-compose.yml에 다음 마운트를 추가해야 합니다:
+- 파일: ~/kontrack/upbit_auto_trading/docker-compose.yml
+- 위치: nginx service → volumes 섹션
+- 추가: - /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro
+- 영향: 다른 프로젝트에 영향 없음 (독립적 마운트)
+
 ## 추가 정보
+- SERVER-GUIDE.txt: 전체 서버 관리 가이드
+- DEPLOY-GUIDE.txt: 간단 배포 가이드
 - README-DEPLOYMENT.txt: 상세 배포 가이드
 - PROJECT-SUMMARY.txt: 프로젝트 전체 요약
 - GitHub사용가이드.md: Git/GitHub 사용법

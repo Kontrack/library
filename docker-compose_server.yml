@@ -1,0 +1,277 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: kontrack-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-gun2}
+      MYSQL_DATABASE: trade
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+      TZ: Asia/Seoul
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./trade.sql:/docker-entrypoint-initdb.d/01-trade.sql
+      - ./transactions.sql:/docker-entrypoint-initdb.d/02-transactions.sql
+      - ./active_threads.sql:/docker-entrypoint-initdb.d/03-active_threads.sql
+      - ./trade_history.sql:/docker-entrypoint-initdb.d/04-trade_history.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - kontrack-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-gun2}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flask API Server + WebSocket
+  flask-server:
+    build: .
+    container_name: kontrack-flask
+    restart: unless-stopped
+    command: python server.py
+    environment:
+      - TZ=Asia/Seoul
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-gun2}
+      - MYSQL_DATABASE=trade
+      - UPBIT_ACCESS_KEY=${UPBIT_ACCESS_KEY}
+      - UPBIT_SECRET_KEY=${UPBIT_SECRET_KEY}
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - kontrack-network
+    volumes:
+      - .:/app
+      - signal_files:/app/signals
+
+  # Deposit/Withdraw Receiver (최초 실행 후 종료)
+  deposit-withdraw-receiver:
+    build: .
+    container_name: kontrack-deposit-withdraw
+    restart: "no"
+    command: python deposit_withdraw_receiver.py
+    environment:
+      - TZ=Asia/Seoul
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-gun2}
+      - MYSQL_DATABASE=trade
+      - UPBIT_ACCESS_KEY=${UPBIT_ACCESS_KEY}
+      - UPBIT_SECRET_KEY=${UPBIT_SECRET_KEY}
+      - FLASK_SERVER_URL=http://flask-server:5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      flask-server:
+        condition: service_started
+    networks:
+      - kontrack-network
+    volumes:
+      - .:/app
+
+  # Transaction Receiver
+  transaction-receiver:
+    build: .
+    container_name: kontrack-transaction
+    restart: unless-stopped
+    command: python transaction_receiver.py
+    environment:
+      - TZ=Asia/Seoul
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-gun2}
+      - MYSQL_DATABASE=trade
+      - UPBIT_ACCESS_KEY=${UPBIT_ACCESS_KEY}
+      - UPBIT_SECRET_KEY=${UPBIT_SECRET_KEY}
+      - FLASK_SERVER_URL=http://flask-server:5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      flask-server:
+        condition: service_started
+    networks:
+      - kontrack-network
+    volumes:
+      - .:/app
+
+  # Asset Receiver
+  asset-receiver:
+    build: .
+    container_name: kontrack-asset
+    restart: unless-stopped
+    command: python asset_receiver.py
+    environment:
+      - TZ=Asia/Seoul
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-gun2}
+      - MYSQL_DATABASE=trade
+      - UPBIT_ACCESS_KEY=${UPBIT_ACCESS_KEY}
+      - UPBIT_SECRET_KEY=${UPBIT_SECRET_KEY}
+      - FLASK_SERVER_URL=http://flask-server:5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      flask-server:
+        condition: service_started
+    networks:
+      - kontrack-network
+    volumes:
+      - .:/app
+      - signal_files:/app/signals
+
+  # Ticker Receiver
+  ticker-receiver:
+    build: .
+    container_name: kontrack-ticker
+    restart: unless-stopped
+    command: python ticker_receiver.py
+    environment:
+      - TZ=Asia/Seoul
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-gun2}
+      - MYSQL_DATABASE=trade
+      - UPBIT_ACCESS_KEY=${UPBIT_ACCESS_KEY}
+      - UPBIT_SECRET_KEY=${UPBIT_SECRET_KEY}
+      - FLASK_SERVER_URL=http://flask-server:5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      flask-server:
+        condition: service_started
+      asset-receiver:
+        condition: service_started
+    networks:
+      - kontrack-network
+    volumes:
+      - .:/app
+      - signal_files:/app/signals
+
+  # Auto Trading Bot
+  auto-trade:
+    build: .
+    container_name: kontrack-auto-trade
+    restart: unless-stopped
+    command: python auto_trade.py
+    environment:
+      - TZ=Asia/Seoul
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=${MYSQL_ROOT_PASSWORD:-gun2}
+      - MYSQL_DATABASE=trade
+      - UPBIT_ACCESS_KEY=${UPBIT_ACCESS_KEY}
+      - UPBIT_SECRET_KEY=${UPBIT_SECRET_KEY}
+      - FLASK_SERVER_URL=http://flask-server:5000
+      - SERVER_URL=http://flask-server:5000
+    depends_on:
+      mysql:
+        condition: service_healthy
+      flask-server:
+        condition: service_started
+      ticker-receiver:
+        condition: service_started
+    networks:
+      - kontrack-network
+    volumes:
+      - .:/app
+      - signal_files:/app/signals
+
+  # ChatKPT Server (Flask + Transformers) - CPU 모드 (GPU는 SER 전용)
+  chat-server:
+    build:
+      context: ../ChatKPT
+      dockerfile: Dockerfile
+    container_name: kontrack-chat
+    restart: unless-stopped
+    command: python3 chat_server.py
+    environment:
+      - TZ=Asia/Seoul
+      # 모델 선택: 3b (기본, 빠름) 또는 7b (강력)
+      - MODEL_SIZE=3b
+      - MODEL_NAME=Qwen/Qwen2.5-3B-Instruct
+      - MODEL_PATH=/app/models/Qwen2.5-3B-Instruct
+      - DEVICE=cpu  # CPU 모드 (GPU는 SER 전용)
+      - MAX_NEW_TOKENS=2048
+      - TEMPERATURE=0.7
+    ports:
+      - "8000:8000"
+    networks:
+      - kontrack-network
+    volumes:
+      - ../ChatKPT:/app
+      - chat_models:/app/models
+    # GPU 비활성화 (SER이 GPU 사용)
+
+  # SER Server (Speech Emotion Recognition)
+  ser-server:
+    build:
+      context: ../SER
+      dockerfile: Dockerfile
+    container_name: kontrack-ser
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Seoul
+      - MODEL_PATH=/app/best_multimodal_model.pth
+      - WHISPER_MODEL=medium  # tiny, base, small, medium, large
+      - DEVICE=cuda  # 'cuda' 또는 'cpu'
+    ports:
+      - "9000:9000"
+    networks:
+      - kontrack-network
+    volumes:
+      - ../SER:/app
+      - ser_cache:/root/.cache
+    # GPU 사용 (NVIDIA GPU 필요)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    # CPU만 사용할 경우 위 deploy 섹션 주석 처리하고 environment의 DEVICE를 'cpu'로 변경
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: kontrack-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../../:/usr/share/nginx/html:ro
+      - nginx_logs:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro  # Let's Encrypt 인증서
+    depends_on:
+      - flask-server
+      - chat-server
+      - ser-server
+    networks:
+      - kontrack-network
+
+networks:
+  kontrack-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  nginx_logs:
+    driver: local
+  signal_files:
+    driver: local
+  chat_models:
+    driver: local
+  ser_cache:
+    driver: local

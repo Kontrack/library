@@ -20,10 +20,21 @@ Domain: https://library.kontrack.kr
   ✓ MySQL 컨테이너 시작 (포트 3307)
 
 
-2단계: Nginx 설정 추가 (수동)
+2단계: Docker 볼륨 마운트 추가 (수동)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # 기존 Nginx 설정 열기
-  sudo nano /etc/nginx/nginx.conf
+  # Kontrack 프로젝트의 docker-compose.yml 편집
+  sudo nano ~/kontrack/upbit_auto_trading/docker-compose.yml
+  
+  # nginx service의 volumes 섹션에 다음 라인 추가:
+  - /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro
+  
+  # 저장 후 종료 (Ctrl+O, Enter, Ctrl+X)
+
+
+3단계: Nginx 설정 추가 (수동)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # 기존 Kontrack 프로젝트의 Nginx 설정 열기
+  sudo nano ~/kontrack/upbit_auto_trading/nginx.conf
 
   # nginx-library-config.txt 파일의 내용을 복사해서
   # http { ... } 블록 내 마지막 server 블록 다음에 붙여넣기
@@ -37,16 +48,19 @@ Domain: https://library.kontrack.kr
   # 저장 후 종료 (Ctrl+O, Enter, Ctrl+X)
 
 
-3단계: Nginx 테스트 및 재시작
+4단계: Nginx 컨테이너 재시작
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  # 설정 테스트
-  sudo nginx -t
+  # Kontrack 프로젝트 디렉토리로 이동
+  cd ~/kontrack/upbit_auto_trading
+  
+  # Nginx 컨테이너만 재시작 (다른 서비스에 영향 없음)
+  docker-compose up -d nginx
+  
+  # Library 프로젝트로 돌아오기
+  cd ~/library
 
-  # OK 나오면 재시작
-  sudo systemctl reload nginx
 
-
-4단계: 확인
+5단계: 확인
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 상태 확인
   ./health.sh
@@ -122,10 +136,12 @@ server {
 최초 배포:
   □ chmod +x *.sh
   □ ./deploy.sh (옵션 1)
-  □ sudo nano /etc/nginx/nginx.conf
+  □ sudo nano ~/kontrack/upbit_auto_trading/docker-compose.yml
+  □ nginx volumes에 library 마운트 추가
+  □ sudo nano ~/kontrack/upbit_auto_trading/nginx.conf
   □ nginx-library-config.txt 내용 붙여넣기
-  □ sudo nginx -t
-  □ sudo systemctl reload nginx
+  □ cd ~/kontrack/upbit_auto_trading
+  □ docker-compose up -d nginx
   □ ./health.sh 로 확인
   □ https://library.kontrack.kr 접속 테스트
 
@@ -169,6 +185,16 @@ A: HTTP 80, HTTPS 443 (웹), MySQL 3307
 Q: 업데이트 후 Nginx도 재시작해야 하나요?
 A: 아니요. update.sh는 웹 파일만 복사하고 MySQL만 재시작합니다.
    프론트엔드 수정이므로 Nginx 재시작 불필요합니다.
+
+Q: Kontrack Nginx에 볼륨 마운트를 추가하면 다른 프로젝트에 영향이 있나요?
+A: 아니요. 추가되는 마운트는 독립적입니다:
+   - 기존: ../../../:/usr/share/nginx/html:ro (kontrack, api, chat, ser)
+   - 추가: /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro (library만)
+   각 마운트는 독립적이므로 다른 프로젝트에 영향을 주지 않습니다.
+
+Q: 볼륨 마운트는 어디에 추가하나요?
+A: ~/kontrack/upbit_auto_trading/docker-compose.yml 파일의
+   nginx service → volumes 섹션에 추가하면 됩니다.
 
 
 ================================================================================

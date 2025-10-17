@@ -32,27 +32,39 @@ release/
    # public 폴더를 적절한 위치에 복사 (예: /usr/share/nginx/html/library)
    sudo mkdir -p /usr/share/nginx/html/library
    sudo cp -r public/* /usr/share/nginx/html/library/
+   sudo chown -R www-data:www-data /usr/share/nginx/html/library
    ```
 
-2. Nginx 설정 추가:
+2. Kontrack Nginx Docker 볼륨 마운트 추가 (수동):
    ```bash
-   # nginx-library-config.txt의 내용을 기존 nginx.conf에 추가
-   # 또는 별도 설정 파일 생성
-   sudo nano /etc/nginx/conf.d/library.conf
-   # nginx-library-config.txt의 server 블록들을 복사하여 붙여넣기
+   # Kontrack 프로젝트의 docker-compose.yml 편집
+   sudo nano ~/kontrack/upbit_auto_trading/docker-compose.yml
    
-   # root 경로를 실제 경로로 수정:
+   # nginx service의 volumes 섹션에 다음 라인 추가:
+   - /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro
+   
+   # 저장 후 종료
+   ```
+
+3. Nginx 설정 추가 (수동):
+   ```bash
+   # nginx-library-config.txt의 내용을 Kontrack nginx.conf에 추가
+   sudo nano ~/kontrack/upbit_auto_trading/nginx.conf
+   # nginx-library-config.txt의 server 블록들을 http { } 블록 내에 복사하여 붙여넣기
+   
+   # root 경로 확인:
    # root /usr/share/nginx/html/library;
    ```
 
-3. Nginx 설정 테스트 및 재시작:
+4. Nginx 컨테이너 재시작:
    ```bash
-   sudo nginx -t
-   sudo systemctl reload nginx
+   cd ~/kontrack/upbit_auto_trading
+   docker-compose up -d nginx
    ```
 
-4. MySQL 컨테이너만 실행 (필요시):
+5. MySQL 컨테이너 실행:
    ```bash
+   cd ~/library
    docker-compose up -d library-mysql
    ```
 
@@ -67,17 +79,23 @@ release/
    - http://localhost:8080 (HTTP)
    - 또는 별도 리버스 프록시 설정
 
+## 볼륨 마운트 설명
+
+기존 Kontrack Nginx Docker 컨테이너는 다음 마운트를 사용합니다:
+- `../../../:/usr/share/nginx/html:ro`
+  - 이는 `/home/kontrack/kontrack/upbit_auto_trading` 기준으로 상위 3단계
+  - 즉, `/home/` 디렉토리를 컨테이너의 `/usr/share/nginx/html`로 마운트
+
+Library 프로젝트를 위한 추가 마운트:
+- `/usr/share/nginx/html/library:/usr/share/nginx/html/library:ro`
+  - 호스트의 `/usr/share/nginx/html/library` 디렉토리를
+  - 컨테이너의 `/usr/share/nginx/html/library`로 직접 마운트
+  - 다른 프로젝트(kontrack, api, chat, ser)에 영향 없음
+
 ## SSL 인증서 발급
 
-library.kontrack.kr 도메인에 대한 SSL 인증서가 아직 없는 경우:
-
-```bash
-# Let's Encrypt 인증서 발급
-sudo certbot certonly --nginx -d library.kontrack.kr
-
-# 또는 웹루트 방식
-sudo certbot certonly --webroot -w /usr/share/nginx/html/library -d library.kontrack.kr
-```
+⚠️ library.kontrack.kr 도메인의 SSL 인증서는 이미 발급되어 있습니다.
+별도 작업 불필요합니다.
 
 ## 포트 사용 현황
 
