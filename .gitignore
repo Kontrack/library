@@ -26,3 +26,7 @@ Thumbs.db
 *.tmp
 *~
 
+# Server-specific configuration files
+nginx.conf
+docker-compose_server.yml
+

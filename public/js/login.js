@@ -29,14 +29,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Redirect to main page
-        window.location.href = 'main.html';
+        window.location.href = '/main';
     });
     
     // Check if user is already logged in
     const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
     if (storedUser) {
         // User is already logged in, redirect to main page
-        window.location.href = 'main.html';
+        window.location.href = '/main';
     }
 });
 

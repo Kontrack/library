@@ -28,9 +28,8 @@ server {
     ssl_session_cache shared:SSL:10m;
     ssl_session_timeout 10m;
 
-    # 루트 디렉토리 (실제 경로로 변경 필요)
-    # 예: root /usr/share/nginx/html/library;
-    root /path/to/library/public;
+    # 루트 디렉토리
+    root /usr/share/nginx/html/library;
     index index.html;
 
     # 정적 파일 캐싱
@@ -39,12 +38,32 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-    # SPA 라우팅 - 모든 경로를 index.html로 리다이렉트
-    location / {
-        try_files $uri $uri/ /index.html;
+    # 루트 경로 → /login 리다이렉트
+    location = / {
+        return 301 /login;
     }
 
-    # 404 에러 페이지
-    error_page 404 /index.html;
+    # 로그인 페이지
+    location = /login {
+        try_files /index.html =404;
+    }
+
+    # 회원가입 페이지
+    location = /register {
+        try_files /register.html =404;
+    }
+
+    # 메인 페이지
+    location = /main {
+        try_files /main.html =404;
+    }
+
+    # 기타 경로는 404
+    location / {
+        return 404;
+    }
+
+    # 404 에러 페이지 → 로그인으로 리다이렉트
+    error_page 404 /login;
 }
 

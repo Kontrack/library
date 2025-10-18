@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
     if (!storedUser) {
         // User is not logged in, redirect to login page
-        window.location.href = 'index.html';
+        window.location.href = '/login';
         return;
     }
     
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('logoutBtn').addEventListener('click', function() {
         localStorage.removeItem('user');
         sessionStorage.removeItem('user');
-        window.location.href = 'index.html';
+        window.location.href = '/login';
     });
     
     // Handle navigation
