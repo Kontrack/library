@@ -17,8 +17,9 @@ git pull git@github.com:Kontrack/library.git main
 
 echo ""
 echo "[3/5] 웹 파일 업데이트..."
-sudo cp -r public/* /usr/share/nginx/html/library/
-sudo chown -R www-data:www-data /usr/share/nginx/html/library/
+# 기존 Kontrack Nginx 마운트 활용: /home/ -> /usr/share/nginx/html
+sudo cp -r public/* /home/library/
+sudo chown -R www-data:www-data /home/library/
 
 echo ""
 echo "[4/5] MySQL 컨테이너 재시작..."
@@ -36,6 +37,7 @@ echo "========================================"
 echo ""
 echo "📍 https://library.kontrack.kr"
 echo "📍 MySQL: localhost:3307"
+echo "📍 웹 파일: /home/library/ (자동 매핑됨)"
 echo ""
 echo "로그 확인: ./logs.sh"
 echo "상태 확인: ./health.sh"

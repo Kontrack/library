@@ -27,7 +27,10 @@ case $choice in
         echo ""
         
         # 기본 경로 설정
-        TARGET_PATH="/usr/share/nginx/html/library"
+        # 기존 Kontrack Nginx 마운트: ../../../:/usr/share/nginx/html:ro
+        # 즉, /home/ -> /usr/share/nginx/html 이므로
+        # /home/library/ -> /usr/share/nginx/html/library/ 로 자동 매핑됨
+        TARGET_PATH="/home/library"
         
         echo -e "${BLUE}1단계: 웹 파일 배포${NC}"
         echo "디렉토리 생성 중..."
@@ -53,25 +56,22 @@ case $choice in
         echo ""
         echo "📍 다음 단계를 수동으로 진행하세요:"
         echo ""
-        echo "1. Kontrack docker-compose.yml에 볼륨 마운트 추가:"
-        echo "   sudo nano ~/kontrack/upbit_auto_trading/docker-compose.yml"
-        echo ""
-        echo "   nginx service의 volumes 섹션에 다음 라인 추가:"
-        echo "   - /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro"
-        echo ""
-        echo "2. Nginx 설정 추가:"
+        echo "1. Nginx 설정 추가:"
         echo "   sudo nano ~/kontrack/upbit_auto_trading/nginx.conf"
         echo ""
         echo "   nginx-library-config.txt의 내용을 복사하여"
         echo "   http { } 블록 내 마지막 server 블록 다음에 붙여넣기"
         echo ""
-        echo "3. Kontrack Nginx 컨테이너 재시작:"
+        echo "2. Kontrack Nginx 컨테이너 재시작:"
         echo "   cd ~/kontrack/upbit_auto_trading"
         echo "   docker-compose up -d nginx"
         echo "   cd ~/library"
         echo ""
-        echo "4. 확인:"
+        echo "3. 확인:"
         echo "   https://library.kontrack.kr"
+        echo ""
+        echo "💡 참고: 기존 Nginx 마운트 (../../../:/usr/share/nginx/html:ro)로"
+        echo "   /home/library/ → /usr/share/nginx/html/library/ 자동 매핑됨"
         echo ""
         echo "유용한 명령어:"
         echo "  상태 확인: ./health.sh"

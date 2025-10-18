@@ -101,9 +101,9 @@ GitHub에서 최신 코드 받아서 자동 배포
 
 ### deploy.sh
 프로덕션 배포
-- 웹 파일 배포 (/usr/share/nginx/html/library/)
+- 웹 파일 배포 (/home/library/ → 자동 매핑)
 - MySQL 시작 (포트 3307)
-- 수동 작업 안내 (볼륨 마운트, Nginx 설정)
+- 수동 작업 안내 (Nginx 설정만)
 
 ## 워크플로우
 
@@ -166,12 +166,12 @@ sudo nginx -t
 sudo systemctl status nginx
 ```
 
-## 볼륨 마운트 (수동 구성)
-Kontrack docker-compose.yml에 다음 마운트를 추가해야 합니다:
-- 파일: ~/kontrack/upbit_auto_trading/docker-compose.yml
-- 위치: nginx service → volumes 섹션
-- 추가: - /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro
-- 영향: 다른 프로젝트에 영향 없음 (독립적 마운트)
+## 볼륨 마운트 (자동 활용)
+기존 Kontrack Nginx 마운트를 활용하여 추가 설정 불필요:
+- 기존 마운트: ../../../:/usr/share/nginx/html:ro
+- 의미: /home/ → /usr/share/nginx/html (컨테이너 내부)
+- 결과: /home/library/ → /usr/share/nginx/html/library/ 자동 매핑
+- 추가 작업: docker-compose.yml 수정 불필요!
 
 ## 추가 정보
 - SERVER-GUIDE.txt: 전체 서버 관리 가이드

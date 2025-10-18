@@ -29,24 +29,14 @@ release/
 
 1. 프론트엔드 파일을 서버에 배치:
    ```bash
-   # public 폴더를 적절한 위치에 복사 (예: /usr/share/nginx/html/library)
-   sudo mkdir -p /usr/share/nginx/html/library
-   sudo cp -r public/* /usr/share/nginx/html/library/
-   sudo chown -R www-data:www-data /usr/share/nginx/html/library
+   # public 폴더를 /home/library/에 복사
+   # (기존 Nginx 마운트로 자동 매핑됨)
+   sudo mkdir -p /home/library
+   sudo cp -r public/* /home/library/
+   sudo chown -R www-data:www-data /home/library
    ```
 
-2. Kontrack Nginx Docker 볼륨 마운트 추가 (수동):
-   ```bash
-   # Kontrack 프로젝트의 docker-compose.yml 편집
-   sudo nano ~/kontrack/upbit_auto_trading/docker-compose.yml
-   
-   # nginx service의 volumes 섹션에 다음 라인 추가:
-   - /usr/share/nginx/html/library:/usr/share/nginx/html/library:ro
-   
-   # 저장 후 종료
-   ```
-
-3. Nginx 설정 추가 (수동):
+2. Nginx 설정 추가:
    ```bash
    # nginx-library-config.txt의 내용을 Kontrack nginx.conf에 추가
    sudo nano ~/kontrack/upbit_auto_trading/nginx.conf
@@ -56,13 +46,13 @@ release/
    # root /usr/share/nginx/html/library;
    ```
 
-4. Nginx 컨테이너 재시작:
+3. Nginx 컨테이너 재시작:
    ```bash
    cd ~/kontrack/upbit_auto_trading
    docker-compose up -d nginx
    ```
 
-5. MySQL 컨테이너 실행:
+4. MySQL 컨테이너 실행:
    ```bash
    cd ~/library
    docker-compose up -d library-mysql
@@ -86,11 +76,11 @@ release/
   - 이는 `/home/kontrack/kontrack/upbit_auto_trading` 기준으로 상위 3단계
   - 즉, `/home/` 디렉토리를 컨테이너의 `/usr/share/nginx/html`로 마운트
 
-Library 프로젝트를 위한 추가 마운트:
-- `/usr/share/nginx/html/library:/usr/share/nginx/html/library:ro`
-  - 호스트의 `/usr/share/nginx/html/library` 디렉토리를
-  - 컨테이너의 `/usr/share/nginx/html/library`로 직접 마운트
-  - 다른 프로젝트(kontrack, api, chat, ser)에 영향 없음
+Library 프로젝트는 기존 마운트를 활용합니다:
+- 호스트: `/home/library/`
+- 컨테이너: `/usr/share/nginx/html/library/` (자동 매핑)
+- 추가 마운트 불필요!
+- 다른 프로젝트(kontrack, api, chat, ser)에 영향 없음
 
 ## SSL 인증서 발급
 
