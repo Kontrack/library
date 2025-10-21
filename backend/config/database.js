@@ -10,6 +10,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || 'library2024',
   database: process.env.DB_NAME || 'library',
   port: process.env.DB_PORT || 3306,
+  charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
