@@ -10,8 +10,14 @@ const PORT = process.env.PORT || 3000;
 
 // 미들웨어
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ charset: 'utf-8' }));
+app.use(express.urlencoded({ extended: true, charset: 'utf-8' }));
+
+// UTF-8 인코딩 강제
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 // 라우터 임포트
 const authRouter = require('./routes/auth');

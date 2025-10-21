@@ -189,36 +189,33 @@
             </section>
             
             <section class="chart-tabs">
+                <!-- 동적으로 로드됨 -->
                 <button class="tab-btn active" data-chart="all">전체</button>
-                <button class="tab-btn" data-chart="programming">프로그래밍</button>
-                <button class="tab-btn" data-chart="database">데이터베이스</button>
-                <button class="tab-btn" data-chart="web">웹 개발</button>
             </section>
             
             <section class="popular-list">
-                <div class="rank-item">
-                    <div class="rank-number">1</div>
-                    <div class="rank-info">
-                        <h3>클린 코드</h3>
-                        <p>로버트 C. 마틴 · 프로그래밍</p>
+                <p class="text-center">로딩 중...</p>
+            </section>
+            
+            <!-- 이달의 통계 섹션 추가 -->
+            <section class="monthly-stats" style="margin-top: 2rem;">
+                <h2>이달의 통계</h2>
+                <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+                    <!-- 이달의 독서왕 -->
+                    <div class="stat-box" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 1rem; color: #2c3e50;">📚 이달의 독서왕 (TOP 3)</h3>
+                        <div id="topReadersContainer">
+                            <p class="text-center" style="color: #7f8c8d;">로딩 중...</p>
+                        </div>
                     </div>
-                    <div class="rank-count">대출 156회</div>
-                </div>
-                <div class="rank-item">
-                    <div class="rank-number">2</div>
-                    <div class="rank-info">
-                        <h3>데이터베이스 개론</h3>
-                        <p>김연희 · 데이터베이스</p>
+                    
+                    <!-- 이달의 핫한 저자 -->
+                    <div class="stat-box" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 1rem; color: #2c3e50;">🔥 이달의 핫한 저자</h3>
+                        <div id="hotAuthorContainer">
+                            <p class="text-center" style="color: #7f8c8d;">로딩 중...</p>
+                        </div>
                     </div>
-                    <div class="rank-count">대출 142회</div>
-                </div>
-                <div class="rank-item">
-                    <div class="rank-number">3</div>
-                    <div class="rank-info">
-                        <h3>JavaScript 완벽 가이드</h3>
-                        <p>데이비드 플래너건 · 웹 개발</p>
-                    </div>
-                    <div class="rank-count">대출 128회</div>
                 </div>
             </section>
         </div>

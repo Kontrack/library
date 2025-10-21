@@ -114,6 +114,7 @@ async function navigateToPage(page) {
                 await searchBooks();
                 break;
             case 'popular':
+                await loadCategoryTabs(); // 카테고리 탭 동적 생성
                 await loadPopularBooks();
                 await loadMonthlyStats();
                 break;
@@ -148,9 +149,42 @@ async function loadDashboardStats() {
             const statCards = document.querySelectorAll('.stat-card .stat-number');
             if (statCards[2]) statCards[2].textContent = eligibility.currentLoanCount || 0;
         }
+        
+        // Load recent books
+        await loadRecentBooks();
     } catch (error) {
         console.error('대시보드 통계 로드 오류:', error);
     }
+}
+
+async function loadRecentBooks() {
+    try {
+        const response = await apiCall('/books/recent?limit=4');
+        if (response.success && response.books.length > 0) {
+            renderRecentBooks(response.books);
+        }
+    } catch (error) {
+        console.error('최근 도서 로드 오류:', error);
+    }
+}
+
+function renderRecentBooks(books) {
+    const container = document.querySelector('.book-grid');
+    if (!container) return;
+    
+    const emojis = ['📘', '📗', '📙', '📕', '📔', '📓'];
+    
+    container.innerHTML = books.map((book, index) => `
+        <div class="book-card">
+            <div class="book-cover">${emojis[index % emojis.length]}</div>
+            <h3>${book.title}</h3>
+            <p class="book-author">${book.authors || '-'}</p>
+            <p class="book-category">${book.categories || '-'}</p>
+            <button class="btn-small" onclick="borrowBook(${book.id})" ${!book.canBorrow ? 'disabled' : ''}>
+                ${book.canBorrow ? '대출하기' : '대출 불가'}
+            </button>
+        </div>
+    `).join('');
 }
 
 // === Books List ===
@@ -246,8 +280,45 @@ async function borrowBook(bookId) {
 }
 
 // === Popular Books ===
-async function loadPopularBooks(categoryId = null) {
+async function loadCategoryTabs() {
+    const tabsContainer = document.querySelector('.chart-tabs');
+    if (!tabsContainer) return;
+    
+    // 카테고리 목록이 없으면 먼저 로드
+    if (allCategories.length === 0) {
+        await loadCategories();
+    }
+    
+    // 동적으로 탭 생성
+    tabsContainer.innerHTML = `
+        <button class="tab-btn active" data-chart="all">전체</button>
+        ${allCategories.map(cat => `
+            <button class="tab-btn" data-chart="${cat.name}">${cat.name}</button>
+        `).join('')}
+    `;
+    
+    // 이벤트 리스너 재등록
+    tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            tabsContainer.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            const chart = e.target.dataset.chart;
+            await loadPopularBooks(chart === 'all' ? null : chart);
+        });
+    });
+}
+
+async function loadPopularBooks(categoryName = null) {
     try {
+        // categoryName을 categoryId로 변환
+        let categoryId = null;
+        if (categoryName && categoryName !== 'all') {
+            const category = allCategories.find(c => c.name === categoryName);
+            if (category) {
+                categoryId = category.id;
+            }
+        }
+        
         const params = categoryId ? `?categoryId=${categoryId}` : '';
         const response = await apiCall(`/books/charts/popular${params}`);
         
@@ -284,20 +355,61 @@ async function loadMonthlyStats() {
     try {
         // 이달의 독서왕
         const readersResponse = await apiCall('/stats/top-readers');
-        if (readersResponse.success && readersResponse.topReaders.length > 0) {
-            console.log('이달의 독서왕:', readersResponse.topReaders);
-            // Can display this in a separate section if needed
+        if (readersResponse.success) {
+            renderTopReaders(readersResponse.topReaders);
         }
         
         // 이달의 핫한 저자
         const authorResponse = await apiCall('/stats/hot-author');
-        if (authorResponse.success && authorResponse.hotAuthor) {
-            console.log('이달의 핫한 저자:', authorResponse.hotAuthor);
-            // Can display this in a separate section if needed
+        if (authorResponse.success) {
+            renderHotAuthor(authorResponse.hotAuthor);
         }
     } catch (error) {
         console.error('월간 통계 로드 오류:', error);
     }
+}
+
+function renderTopReaders(readers) {
+    const container = document.getElementById('topReadersContainer');
+    if (!container) return;
+    
+    if (!readers || readers.length === 0) {
+        container.innerHTML = '<p class="text-center" style="color: #7f8c8d;">이번 달 대출 기록이 없습니다.</p>';
+        return;
+    }
+    
+    const medals = ['🥇', '🥈', '🥉'];
+    container.innerHTML = readers.map((reader, index) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #ecf0f1;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="font-size: 1.5rem;">${medals[index]}</span>
+                <div>
+                    <div style="font-weight: 600; color: #2c3e50;">${reader.name}</div>
+                    <div style="font-size: 0.875rem; color: #7f8c8d;">ID: ${reader.id}</div>
+                </div>
+            </div>
+            <div style="font-weight: 600; color: #3498db;">${reader.loan_count}권</div>
+        </div>
+    `).join('');
+}
+
+function renderHotAuthor(author) {
+    const container = document.getElementById('hotAuthorContainer');
+    if (!container) return;
+    
+    if (!author) {
+        container.innerHTML = '<p class="text-center" style="color: #7f8c8d;">이번 달 대출 기록이 없습니다.</p>';
+        return;
+    }
+    
+    container.innerHTML = `
+        <div style="text-align: center; padding: 1rem 0;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✨</div>
+            <div style="font-size: 1.5rem; font-weight: 700; color: #2c3e50; margin-bottom: 0.5rem;">${author.name}</div>
+            <div style="font-size: 1.125rem; color: #3498db; font-weight: 600;">총 ${author.total_loans}회 대출</div>
+            <div style="font-size: 0.875rem; color: #7f8c8d; margin-top: 0.5rem;">이번 달 가장 인기 있는 저자입니다!</div>
+        </div>
+    `;
 }
 
 // === My Loans ===
