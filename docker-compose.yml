@@ -29,15 +29,8 @@ services:
     build: ./backend
     container_name: library-backend
     restart: unless-stopped
-    environment:
-      - PORT=3000
-      - DB_HOST=library-mysql
-      - DB_USER=root
-      - DB_PASSWORD=${MYSQL_ROOT_PASSWORD:-library2024}
-      - DB_NAME=library
-      - DB_PORT=3306
-      - ADMIN_CODE=${ADMIN_CODE:-2022086244}
-      - TZ=Asia/Seoul
+    env_file:
+      - ./backend/.env
     ports:
       - "3001:3000"  # Using 3001 to avoid conflicts
     depends_on:

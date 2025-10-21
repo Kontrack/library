@@ -9,11 +9,15 @@ const pool = mysql.createPool({
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || 'library2024',
   database: process.env.DB_NAME || 'library',
-  port: process.env.DB_PORT || 3306,
-  charset: 'utf8mb4',
+  port: parseInt(process.env.DB_PORT) || 3306,
+  charset: process.env.DB_CHARSET || 'utf8mb4',
+  collation: process.env.DB_COLLATION || 'utf8mb4_unicode_ci',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  // 추가 인코딩 옵션
+  multipleStatements: false,
+  timezone: '+09:00'
 });
 
 // 연결 테스트
