@@ -448,6 +448,7 @@ function renderHotAuthor(author) {
 // === My Loans ===
 async function loadMyLoans() {
     try {
+        // status=all 로 변경: 대출 중 + 반납 완료 모두 표시
         const response = await apiCall(`/loans/history/${currentUser.id}?status=all`);
         if (response.success) {
             renderMyLoans(response.loans);
@@ -502,21 +503,39 @@ function renderMyLoans(loans) {
         }
     }
     
-    // Loan history
+    // Loan history (전체 대출 이력 - 현재 대출중 + 반납완료)
     const historyTable = document.querySelector('.loan-history tbody');
     if (historyTable) {
-        if (pastLoans.length === 0) {
+        if (loans.length === 0) {
             historyTable.innerHTML = '<tr><td colspan="5" class="text-center">대출 이력이 없습니다.</td></tr>';
         } else {
-            historyTable.innerHTML = pastLoans.map(loan => `
-                <tr>
-                    <td>${loan.title}</td>
-                    <td>${loan.authors || '-'}</td>
-                    <td>${formatDate(loan.checkout_at)}</td>
-                    <td>${formatDate(loan.returned_at)}</td>
-                    <td><span class="badge badge-secondary">반납완료</span></td>
-                </tr>
-            `).join('');
+            historyTable.innerHTML = loans.map(loan => {
+                const isCurrentlyBorrowed = !loan.returned_at;
+                const isOverdue = loan.is_overdue;
+                
+                return `
+                    <tr class="${isOverdue ? 'table-danger' : ''}">
+                        <td>${loan.title}</td>
+                        <td>${loan.authors || '-'}</td>
+                        <td>${formatDate(loan.checkout_at)}</td>
+                        <td>${isCurrentlyBorrowed ? 
+                            `<span style="color: ${isOverdue ? '#e74c3c' : '#3498db'};">
+                                ${formatDate(loan.due_at)} 예정
+                                ${isOverdue ? ` (${loan.overdue_days}일 연체)` : ''}
+                            </span>` : 
+                            formatDate(loan.returned_at)
+                        }</td>
+                        <td>
+                            ${isCurrentlyBorrowed ? 
+                                `<span class="badge ${isOverdue ? 'badge-danger' : 'badge-warning'}">
+                                    ${isOverdue ? '연체 중' : '대출 중'}
+                                </span>` :
+                                `<span class="badge badge-success">반납완료</span>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
     }
 }
