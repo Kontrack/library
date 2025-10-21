@@ -22,13 +22,13 @@ sudo cp -r public/* /home/library/
 sudo chown -R www-data:www-data /home/library/
 
 echo ""
-echo "[4/5] MySQL 컨테이너 재시작..."
-docker-compose restart library-mysql
+echo "[4/5] 컨테이너 재시작..."
+docker-compose restart
 
 echo ""
 echo "[5/5] 서비스 상태 확인..."
-sleep 3
-docker-compose ps library-mysql
+sleep 5
+docker-compose ps
 
 echo ""
 echo "========================================"

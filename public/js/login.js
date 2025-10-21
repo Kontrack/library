@@ -3,40 +3,44 @@
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     
+    // Check if user is already logged in
+    if (isLoggedIn()) {
+        window.location.href = '/main';
+        return;
+    }
+    
     // Handle login form submission
-    loginForm.addEventListener('submit', function(e) {
+    loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const userId = document.getElementById('userId').value;
+        const userId = document.getElementById('userId').value.trim();
         const userPassword = document.getElementById('userPassword').value;
-        const rememberMe = document.getElementById('rememberMe').checked;
         
-        // For now, just redirect to main page without backend validation
-        // In production, you would make an API call here
-        
-        // Store user data in localStorage (temporary, for demo)
-        const userData = {
-            userId: userId || 'demo_user',
-            name: '테스트 사용자',
-            isAdmin: false,
-            loginTime: new Date().toISOString()
-        };
-        
-        if (rememberMe) {
-            localStorage.setItem('user', JSON.stringify(userData));
-        } else {
-            sessionStorage.setItem('user', JSON.stringify(userData));
+        if (!userId || !userPassword) {
+            alert('아이디와 비밀번호를 입력해주세요.');
+            return;
         }
         
-        // Redirect to main page
-        window.location.href = '/main';
+        try {
+            // API call to login
+            const response = await apiCall('/auth/login', {
+                method: 'POST',
+                body: JSON.stringify({
+                    id: userId,
+                    password: userPassword
+                })
+            });
+            
+            if (response.success) {
+                // Store user data
+                setUser(response.user, false);
+                
+                // Redirect to main page
+                window.location.href = '/main';
+            }
+        } catch (error) {
+            alert(error.message || '로그인에 실패했습니다.');
+        }
     });
-    
-    // Check if user is already logged in
-    const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
-    if (storedUser) {
-        // User is already logged in, redirect to main page
-        window.location.href = '/main';
-    }
 });
 

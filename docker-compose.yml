@@ -12,6 +12,8 @@ services:
       TZ: Asia/Seoul
     volumes:
       - library_mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./dummy_data.sql:/docker-entrypoint-initdb.d/02-dummy_data.sql
     ports:
       - "3307:3306"  # Using 3307 to avoid conflict with existing MySQL on 3306
     networks:
@@ -21,6 +23,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Node.js Backend API Server
+  library-backend:
+    build: ./backend
+    container_name: library-backend
+    restart: unless-stopped
+    environment:
+      - PORT=3000
+      - DB_HOST=library-mysql
+      - DB_USER=root
+      - DB_PASSWORD=${MYSQL_ROOT_PASSWORD:-library2024}
+      - DB_NAME=library
+      - DB_PORT=3306
+      - ADMIN_CODE=${ADMIN_CODE:-2022086244}
+      - TZ=Asia/Seoul
+    ports:
+      - "3001:3000"  # Using 3001 to avoid conflicts
+    depends_on:
+      library-mysql:
+        condition: service_healthy
+    networks:
+      - library-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
 
 networks:
   library-network:
