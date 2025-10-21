@@ -216,12 +216,13 @@ function renderRecentBooks(books) {
 async function searchBooks() {
     try {
         const searchTerm = document.getElementById('searchInput')?.value || '';
+        const searchType = document.getElementById('searchType')?.value || 'title';
         const sortBy = document.getElementById('sortBy')?.value || 'title';
         const filterCategory = document.getElementById('filterCategory')?.value || '';
         
         const params = new URLSearchParams({
             search: searchTerm,
-            searchType: 'title',
+            searchType: searchType,  // 검색 타입 반영 (title, author, category)
             sortBy: sortBy,
             sortOrder: 'ASC'
         });
