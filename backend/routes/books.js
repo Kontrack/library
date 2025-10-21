@@ -77,6 +77,48 @@ router.get('/', async (req, res) => {
   }
 });
 
+// 최근 추가된 도서 조회 (반드시 /:id보다 먼저 와야 함!)
+router.get('/recent', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 4;
+    
+    const [books] = await db.execute(`
+      SELECT 
+        b.id,
+        b.title,
+        b.published_year,
+        GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ', ') as authors,
+        GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') as categories,
+        COUNT(DISTINCT bc.id) as total_copies,
+        COUNT(DISTINCT CASE WHEN bc.status = 'available' THEN bc.id END) as available_copies
+      FROM books b
+      LEFT JOIN book_authors ba ON b.id = ba.book_id
+      LEFT JOIN authors a ON ba.author_id = a.id
+      LEFT JOIN book_categories bcat ON b.id = bcat.book_id
+      LEFT JOIN categories c ON bcat.category_id = c.id
+      LEFT JOIN book_copies bc ON b.id = bc.book_id
+      GROUP BY b.id, b.title, b.published_year
+      ORDER BY b.created_at DESC
+      LIMIT ?
+    `, [limit]);
+    
+    res.json({ 
+      success: true, 
+      books: books.map(book => ({
+        ...book,
+        canBorrow: book.available_copies > 0
+      }))
+    });
+    
+  } catch (error) {
+    console.error('최근 도서 조회 오류:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '최근 도서 조회 중 오류가 발생했습니다.' 
+    });
+  }
+});
+
 // 도서 상세 조회
 router.get('/:id', async (req, res) => {
   try {
@@ -204,48 +246,6 @@ router.get('/categories/list', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: '카테고리 목록 조회 중 오류가 발생했습니다.' 
-    });
-  }
-});
-
-// 최근 추가된 도서 조회
-router.get('/recent', async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 4;
-    
-    const [books] = await db.execute(`
-      SELECT 
-        b.id,
-        b.title,
-        b.published_year,
-        GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ', ') as authors,
-        GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') as categories,
-        COUNT(DISTINCT bc.id) as total_copies,
-        COUNT(DISTINCT CASE WHEN bc.status = 'available' THEN bc.id END) as available_copies
-      FROM books b
-      LEFT JOIN book_authors ba ON b.id = ba.book_id
-      LEFT JOIN authors a ON ba.author_id = a.id
-      LEFT JOIN book_categories bcat ON b.id = bcat.book_id
-      LEFT JOIN categories c ON bcat.category_id = c.id
-      LEFT JOIN book_copies bc ON b.id = bc.book_id
-      GROUP BY b.id, b.title, b.published_year
-      ORDER BY b.created_at DESC
-      LIMIT ?
-    `, [limit]);
-    
-    res.json({ 
-      success: true, 
-      books: books.map(book => ({
-        ...book,
-        canBorrow: book.available_copies > 0
-      }))
-    });
-    
-  } catch (error) {
-    console.error('최근 도서 조회 오류:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: '최근 도서 조회 중 오류가 발생했습니다.' 
     });
   }
 });
