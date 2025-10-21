@@ -69,6 +69,12 @@ function setupEventListeners() {
         sortBy.addEventListener('change', () => searchBooks());
     }
     
+    // Books page - category filter
+    const filterCategory = document.getElementById('filterCategory');
+    if (filterCategory) {
+        filterCategory.addEventListener('change', () => searchBooks());
+    }
+    
     // Popular page - chart tabs
     document.querySelectorAll('.chart-tabs .tab-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
@@ -111,6 +117,7 @@ async function navigateToPage(page) {
                 await loadDashboardStats();
                 break;
             case 'books':
+                await loadBooksCategoryFilter(); // 카테고리 필터 로드
                 await searchBooks();
                 break;
             case 'popular':
@@ -128,6 +135,24 @@ async function navigateToPage(page) {
                 break;
         }
     }
+}
+
+async function loadBooksCategoryFilter() {
+    const filterSelect = document.getElementById('filterCategory');
+    if (!filterSelect) return;
+    
+    // 카테고리 목록이 없으면 먼저 로드
+    if (allCategories.length === 0) {
+        await loadCategories();
+    }
+    
+    // 드롭다운 옵션 생성
+    filterSelect.innerHTML = `
+        <option value="all">전체</option>
+        ${allCategories.map(cat => `
+            <option value="${cat.id}">${cat.name}</option>
+        `).join('')}
+    `;
 }
 
 // === Dashboard ===
@@ -192,6 +217,7 @@ async function searchBooks() {
     try {
         const searchTerm = document.getElementById('searchInput')?.value || '';
         const sortBy = document.getElementById('sortBy')?.value || 'title';
+        const filterCategory = document.getElementById('filterCategory')?.value || '';
         
         const params = new URLSearchParams({
             search: searchTerm,
@@ -199,6 +225,11 @@ async function searchBooks() {
             sortBy: sortBy,
             sortOrder: 'ASC'
         });
+        
+        // 카테고리 필터 추가
+        if (filterCategory && filterCategory !== 'all') {
+            params.append('categoryId', filterCategory);
+        }
         
         const response = await apiCall(`/books?${params}`);
         if (response.success) {
@@ -272,7 +303,8 @@ async function borrowBook(bookId) {
         
         if (loanResponse.success) {
             alert('대출이 완료되었습니다!');
-            await searchBooks(); // Refresh list
+            // 내 대출 페이지로 이동
+            await navigateToPage('mybooks');
         }
     } catch (error) {
         alert(error.message || '대출에 실패했습니다.');
@@ -533,8 +565,37 @@ function showAdminPage(adminPage) {
 }
 
 async function loadAdminBooks() {
-    await searchBooks();
-    // Can reuse the same books data for admin view
+    try {
+        const response = await apiCall('/books?sortBy=title');
+        if (response.success) {
+            renderAdminBooksTable(response.books);
+        }
+    } catch (error) {
+        console.error('관리자 도서 목록 로드 오류:', error);
+    }
+}
+
+function renderAdminBooksTable(books) {
+    const tbody = document.getElementById('adminBooksTableBody');
+    if (!tbody) return;
+    
+    if (books.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">등록된 도서가 없습니다.</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = books.map(book => `
+        <tr>
+            <td>${book.title}</td>
+            <td>${book.authors || '-'}</td>
+            <td>${book.categories || '-'}</td>
+            <td>${book.total_copies}</td>
+            <td>
+                <button class="btn-small" onclick="addBookCopies(${book.id}, '${book.title.replace(/'/g, "\\'")}')">사본 추가</button>
+                <button class="btn-small btn-danger" onclick="deleteBook(${book.id}, '${book.title.replace(/'/g, "\\'")}')">삭제</button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 async function loadAdminCategories() {
@@ -549,13 +610,17 @@ async function loadAdminCategories() {
 }
 
 function renderAdminCategories(categories) {
-    const tbody = document.querySelector('#admin-categories tbody');
+    const tbody = document.getElementById('adminCategoriesTableBody');
     if (!tbody) return;
+    
+    if (categories.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="2" class="text-center">등록된 카테고리가 없습니다.</td></tr>';
+        return;
+    }
     
     tbody.innerHTML = categories.map(cat => `
         <tr>
             <td>${cat.name}</td>
-            <td>-</td>
             <td>
                 <button class="btn-small btn-danger" onclick="deleteCategory(${cat.id}, '${cat.name}')">삭제</button>
             </td>
@@ -575,8 +640,13 @@ async function loadAdminMembers() {
 }
 
 function renderAdminMembers(users) {
-    const tbody = document.querySelector('#admin-members tbody');
+    const tbody = document.getElementById('adminMembersTableBody');
     if (!tbody) return;
+    
+    if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">등록된 회원이 없습니다.</td></tr>';
+        return;
+    }
     
     tbody.innerHTML = users.map(user => `
         <tr>
@@ -609,6 +679,141 @@ async function deleteCategory(categoryId, categoryName) {
         }
     } catch (error) {
         alert(error.message || '카테고리 삭제에 실패했습니다.');
+    }
+}
+
+// === Admin Book Management ===
+function showAddBookModal() {
+    document.getElementById('addBookModal').style.display = 'flex';
+}
+
+function closeAddBookModal() {
+    document.getElementById('addBookModal').style.display = 'none';
+    // 초기화
+    document.getElementById('newBookTitle').value = '';
+    document.getElementById('newBookYear').value = '';
+    document.getElementById('newBookAuthors').value = '';
+    document.getElementById('newBookCategories').value = '';
+    document.getElementById('newBookCopyCount').value = '1';
+}
+
+async function addNewBook() {
+    const title = document.getElementById('newBookTitle').value.trim();
+    const year = parseInt(document.getElementById('newBookYear').value) || null;
+    const authorsStr = document.getElementById('newBookAuthors').value.trim();
+    const categoriesStr = document.getElementById('newBookCategories').value.trim();
+    const copyCount = parseInt(document.getElementById('newBookCopyCount').value) || 1;
+    
+    if (!title) {
+        alert('제목을 입력하세요.');
+        return;
+    }
+    
+    if (!authorsStr) {
+        alert('저자를 입력하세요.');
+        return;
+    }
+    
+    const authors = authorsStr.split(',').map(a => a.trim()).filter(a => a);
+    const categories = categoriesStr ? categoriesStr.split(',').map(c => c.trim()).filter(c => c) : [];
+    
+    try {
+        const response = await apiCall('/admin/books', {
+            method: 'POST',
+            body: JSON.stringify({
+                title,
+                publishedYear: year,
+                authors,
+                categories,
+                copyCount
+            })
+        });
+        
+        if (response.success) {
+            alert('도서가 추가되었습니다!');
+            closeAddBookModal();
+            await loadAdminBooks();
+        }
+    } catch (error) {
+        alert(error.message || '도서 추가에 실패했습니다.');
+    }
+}
+
+async function addBookCopies(bookId, bookTitle) {
+    const count = prompt(`"${bookTitle}"의 사본을 몇 권 추가하시겠습니까?`, '1');
+    if (!count) return;
+    
+    const copyCount = parseInt(count);
+    if (isNaN(copyCount) || copyCount < 1) {
+        alert('올바른 수량을 입력하세요.');
+        return;
+    }
+    
+    try {
+        const response = await apiCall(`/admin/books/${bookId}/copies`, {
+            method: 'POST',
+            body: JSON.stringify({ count: copyCount })
+        });
+        
+        if (response.success) {
+            alert(response.message);
+            await loadAdminBooks();
+        }
+    } catch (error) {
+        alert(error.message || '사본 추가에 실패했습니다.');
+    }
+}
+
+async function deleteBook(bookId, bookTitle) {
+    if (!confirm(`"${bookTitle}"을(를) 삭제하시겠습니까?\n\n※ 대출 중인 사본이 있으면 삭제할 수 없습니다.`)) {
+        return;
+    }
+    
+    try {
+        const response = await apiCall(`/admin/books/${bookId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.success) {
+            alert('도서가 삭제되었습니다.');
+            await loadAdminBooks();
+        }
+    } catch (error) {
+        alert(error.message || '도서 삭제에 실패했습니다.');
+    }
+}
+
+// === Admin Category Management ===
+function showAddCategoryModal() {
+    document.getElementById('addCategoryModal').style.display = 'flex';
+}
+
+function closeAddCategoryModal() {
+    document.getElementById('addCategoryModal').style.display = 'none';
+    document.getElementById('newCategoryName').value = '';
+}
+
+async function addNewCategory() {
+    const name = document.getElementById('newCategoryName').value.trim();
+    
+    if (!name) {
+        alert('카테고리 이름을 입력하세요.');
+        return;
+    }
+    
+    try {
+        const response = await apiCall('/admin/categories', {
+            method: 'POST',
+            body: JSON.stringify({ name })
+        });
+        
+        if (response.success) {
+            alert('카테고리가 추가되었습니다!');
+            closeAddCategoryModal();
+            await loadAdminCategories();
+        }
+    } catch (error) {
+        alert(error.message || '카테고리 추가에 실패했습니다.');
     }
 }
 

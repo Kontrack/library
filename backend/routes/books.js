@@ -9,7 +9,8 @@ router.get('/', async (req, res) => {
       search = '', 
       searchType = 'title', // title, author, category
       sortBy = 'title', // title, author, category, published_year
-      sortOrder = 'ASC' // ASC, DESC
+      sortOrder = 'ASC', // ASC, DESC
+      categoryId = '' // 카테고리 필터
     } = req.query;
     
     let query = `
@@ -30,19 +31,30 @@ router.get('/', async (req, res) => {
     `;
     
     const params = [];
+    const conditions = [];
     
     // 검색 조건
     if (search) {
       if (searchType === 'title') {
-        query += ' WHERE b.title LIKE ?';
+        conditions.push('b.title LIKE ?');
         params.push(`%${search}%`);
       } else if (searchType === 'author') {
-        query += ' WHERE a.name LIKE ?';
+        conditions.push('a.name LIKE ?');
         params.push(`%${search}%`);
       } else if (searchType === 'category') {
-        query += ' WHERE c.name LIKE ?';
+        conditions.push('c.name LIKE ?');
         params.push(`%${search}%`);
       }
+    }
+    
+    // 카테고리 필터
+    if (categoryId) {
+      conditions.push('bcat.category_id = ?');
+      params.push(categoryId);
+    }
+    
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
     }
     
     query += ' GROUP BY b.id, b.title, b.published_year';
@@ -184,21 +196,26 @@ router.get('/charts/popular', async (req, res) => {
   try {
     const { categoryId } = req.query;
     
+    // 서브쿼리로 대출 수 먼저 계산
     let query = `
       SELECT 
         b.id,
         b.title,
         GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ', ') as authors,
         GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ', ') as categories,
-        COUNT(l.id) as loan_count
+        COALESCE(loan_counts.loan_count, 0) as loan_count
       FROM books b
       LEFT JOIN book_authors ba ON b.id = ba.book_id
       LEFT JOIN authors a ON ba.author_id = a.id
       LEFT JOIN book_categories bcat ON b.id = bcat.book_id
       LEFT JOIN categories c ON bcat.category_id = c.id
-      LEFT JOIN book_copies bc ON b.id = bc.book_id
-      LEFT JOIN loans l ON bc.id = l.copy_id 
-        AND l.checkout_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
+      LEFT JOIN (
+        SELECT bc.book_id, COUNT(DISTINCT l.id) as loan_count
+        FROM book_copies bc
+        JOIN loans l ON bc.id = l.copy_id
+        WHERE l.checkout_at >= DATE_SUB(NOW(), INTERVAL 3 MONTH)
+        GROUP BY bc.book_id
+      ) loan_counts ON b.id = loan_counts.book_id
     `;
     
     const params = [];
@@ -209,7 +226,7 @@ router.get('/charts/popular', async (req, res) => {
     }
     
     query += `
-      GROUP BY b.id
+      GROUP BY b.id, b.title, loan_counts.loan_count
       HAVING loan_count > 0
       ORDER BY loan_count DESC
       LIMIT 10

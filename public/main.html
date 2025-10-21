@@ -132,17 +132,13 @@
                         <option value="title">제목</option>
                         <option value="author">저자</option>
                         <option value="category">카테고리</option>
-                        <option value="available">대출 가능</option>
                     </select>
                 </div>
                 <div class="filter-group">
                     <label>카테고리:</label>
                     <select id="filterCategory">
+                        <!-- 동적으로 로드됨 -->
                         <option value="all">전체</option>
-                        <option value="programming">프로그래밍</option>
-                        <option value="database">데이터베이스</option>
-                        <option value="web">웹 개발</option>
-                        <option value="algorithm">알고리즘</option>
                     </select>
                 </div>
             </section>
@@ -300,7 +296,7 @@
             
             <section id="admin-books" class="admin-content">
                 <div class="admin-actions">
-                    <button class="btn-primary">서적 추가</button>
+                    <button class="btn-primary" onclick="showAddBookModal()">서적 추가</button>
                 </div>
                 <table class="data-table">
                     <thead>
@@ -312,42 +308,25 @@
                             <th>액션</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>클린 코드</td>
-                            <td>로버트 C. 마틴</td>
-                            <td>프로그래밍</td>
-                            <td>5</td>
-                            <td>
-                                <button class="btn-small">수정</button>
-                                <button class="btn-small btn-danger">삭제</button>
-                            </td>
-                        </tr>
+                    <tbody id="adminBooksTableBody">
+                        <tr><td colspan="5" class="text-center">로딩 중...</td></tr>
                     </tbody>
                 </table>
             </section>
             
             <section id="admin-categories" class="admin-content" style="display: none;">
                 <div class="admin-actions">
-                    <button class="btn-primary">카테고리 추가</button>
+                    <button class="btn-primary" onclick="showAddCategoryModal()">카테고리 추가</button>
                 </div>
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>카테고리명</th>
-                            <th>도서 수</th>
                             <th>액션</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>프로그래밍</td>
-                            <td>156</td>
-                            <td>
-                                <button class="btn-small">수정</button>
-                                <button class="btn-small btn-danger">삭제</button>
-                            </td>
-                        </tr>
+                    <tbody id="adminCategoriesTableBody">
+                        <tr><td colspan="2" class="text-center">로딩 중...</td></tr>
                     </tbody>
                 </table>
             </section>
@@ -363,19 +342,59 @@
                             <th>상태</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>user001</td>
-                            <td>홍길동</td>
-                            <td>hong@example.com</td>
-                            <td>2025-10-01</td>
-                            <td><span class="badge badge-success">정상</span></td>
-                        </tr>
+                    <tbody id="adminMembersTableBody">
+                        <tr><td colspan="5" class="text-center">로딩 중...</td></tr>
                     </tbody>
                 </table>
             </section>
         </div>
     </main>
+    
+    <!-- 서적 추가 모달 -->
+    <div id="addBookModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:2rem; border-radius:8px; max-width:500px; width:90%;">
+            <h2>서적 추가</h2>
+            <div style="margin:1rem 0;">
+                <label>제목*</label>
+                <input type="text" id="newBookTitle" placeholder="책 제목" style="width:100%; padding:0.5rem; margin-top:0.25rem;">
+            </div>
+            <div style="margin:1rem 0;">
+                <label>출판년도</label>
+                <input type="number" id="newBookYear" placeholder="2025" style="width:100%; padding:0.5rem; margin-top:0.25rem;">
+            </div>
+            <div style="margin:1rem 0;">
+                <label>저자* (쉼표로 구분)</label>
+                <input type="text" id="newBookAuthors" placeholder="저자1, 저자2" style="width:100%; padding:0.5rem; margin-top:0.25rem;">
+            </div>
+            <div style="margin:1rem 0;">
+                <label>카테고리 (쉼표로 구분)</label>
+                <input type="text" id="newBookCategories" placeholder="소설, 판타지" style="width:100%; padding:0.5rem; margin-top:0.25rem;">
+            </div>
+            <div style="margin:1rem 0;">
+                <label>사본 수량</label>
+                <input type="number" id="newBookCopyCount" value="1" min="1" style="width:100%; padding:0.5rem; margin-top:0.25rem;">
+            </div>
+            <div style="display:flex; gap:0.5rem; margin-top:1.5rem;">
+                <button class="btn-primary" onclick="addNewBook()" style="flex:1;">추가</button>
+                <button class="btn-small" onclick="closeAddBookModal()" style="flex:1;">취소</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 카테고리 추가 모달 -->
+    <div id="addCategoryModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:2rem; border-radius:8px; max-width:400px; width:90%;">
+            <h2>카테고리 추가</h2>
+            <div style="margin:1rem 0;">
+                <label>카테고리 이름*</label>
+                <input type="text" id="newCategoryName" placeholder="카테고리 이름" style="width:100%; padding:0.5rem; margin-top:0.25rem;">
+            </div>
+            <div style="display:flex; gap:0.5rem; margin-top:1.5rem;">
+                <button class="btn-primary" onclick="addNewCategory()" style="flex:1;">추가</button>
+                <button class="btn-small" onclick="closeAddCategoryModal()" style="flex:1;">취소</button>
+            </div>
+        </div>
+    </div>
     
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
