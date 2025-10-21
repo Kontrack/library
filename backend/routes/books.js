@@ -80,9 +80,11 @@ router.get('/', async (req, res) => {
 // 최근 추가된 도서 조회 (반드시 /:id보다 먼저 와야 함!)
 router.get('/recent', async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 4;
+    const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 4, 50)); // 1~50 범위로 제한
     
-    const [books] = await db.execute(`
+    // LIMIT는 prepared statement 파라미터로 전달할 수 없는 경우가 있어 직접 삽입
+    // (limit 값은 위에서 정수로 검증됨)
+    const [books] = await db.query(`
       SELECT 
         b.id,
         b.title,
@@ -99,8 +101,8 @@ router.get('/recent', async (req, res) => {
       LEFT JOIN book_copies bc ON b.id = bc.book_id
       GROUP BY b.id, b.title, b.published_year
       ORDER BY b.created_at DESC
-      LIMIT ?
-    `, [limit]);
+      LIMIT ${limit}
+    `);
     
     res.json({ 
       success: true, 
