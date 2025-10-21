@@ -76,7 +76,7 @@ CREATE TABLE book_categories (
 CREATE TABLE book_copies (
     id INT PRIMARY KEY AUTO_INCREMENT,
     book_id INT NOT NULL,
-    status ENUM('available', 'borrowed', 'lost', 'damaged') NOT NULL DEFAULT 'available',
+    status ENUM('available', 'borrowed') NOT NULL DEFAULT 'available',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
     INDEX idx_book (book_id),
