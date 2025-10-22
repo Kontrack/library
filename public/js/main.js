@@ -893,7 +893,10 @@ async function changePassword(event) {
             
             // 로그아웃 권장
             if (confirm('비밀번호가 변경되었습니다. 다시 로그인하시겠습니까?')) {
-                logout();
+                // 세션 정리 및 로그인 페이지로 이동
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('user');
+                window.location.href = '/login';
             }
         }
     } catch (error) {
