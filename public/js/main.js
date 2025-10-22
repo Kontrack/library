@@ -854,3 +854,49 @@ function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('ko-KR');
 }
+
+// === Settings (Password Change) ===
+async function changePassword(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // 새 비밀번호 확인
+    if (newPassword !== confirmPassword) {
+        alert('새 비밀번호가 일치하지 않습니다.');
+        return;
+    }
+    
+    // 현재 비밀번호와 같은지 확인
+    if (currentPassword === newPassword) {
+        alert('새 비밀번호는 현재 비밀번호와 달라야 합니다.');
+        return;
+    }
+    
+    try {
+        const response = await apiCall('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({
+                userId: currentUser.id,
+                currentPassword: currentPassword,
+                newPassword: newPassword
+            })
+        });
+        
+        if (response.success) {
+            alert('비밀번호가 성공적으로 변경되었습니다.');
+            
+            // 폼 초기화
+            document.getElementById('changePasswordForm').reset();
+            
+            // 로그아웃 권장
+            if (confirm('비밀번호가 변경되었습니다. 다시 로그인하시겠습니까?')) {
+                logout();
+            }
+        }
+    } catch (error) {
+        alert(error.message || '비밀번호 변경에 실패했습니다.');
+    }
+}

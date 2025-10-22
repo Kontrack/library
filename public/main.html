@@ -28,6 +28,7 @@
                 <li><a href="#" class="nav-link" data-page="books">서적 목록</a></li>
                 <li><a href="#" class="nav-link" data-page="popular">인기 도서</a></li>
                 <li><a href="#" class="nav-link" data-page="mybooks">내 대출</a></li>
+                <li><a href="#" class="nav-link" data-page="settings">🔐 설정</a></li>
                 <li class="admin-only" style="display: none;">
                     <a href="#" class="nav-link" data-page="manage">관리</a>
                 </li>
@@ -355,6 +356,41 @@
         </div>
     </main>
     
+    <!-- Settings Page -->
+        <div id="page-settings" class="page">
+            <section class="page-header">
+                <h1>⚙️ 설정</h1>
+            </section>
+            
+            <section class="settings-content" style="max-width: 600px; margin: 2rem auto; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <h2 style="margin-bottom: 1.5rem; color: #2c3e50;">비밀번호 변경</h2>
+                
+                <form id="changePasswordForm" onsubmit="changePassword(event)">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">현재 비밀번호 *</label>
+                        <input type="password" id="currentPassword" required 
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">새 비밀번호 * (최소 4자)</label>
+                        <input type="password" id="newPassword" required minlength="4"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">새 비밀번호 확인 *</label>
+                        <input type="password" id="confirmPassword" required minlength="4"
+                               style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem;">
+                    </div>
+                    
+                    <button type="submit" class="btn-primary" style="width: 100%; padding: 0.75rem; font-size: 1rem;">
+                        비밀번호 변경
+                    </button>
+                </form>
+            </section>
+        </div>
+
     <!-- 서적 추가 모달 -->
     <div id="addBookModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
         <div style="background:white; padding:2rem; border-radius:8px; max-width:500px; width:90%;">
